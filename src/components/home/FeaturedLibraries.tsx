@@ -1,92 +1,136 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { 
-  Star, 
-  MapPin, 
-  Users, 
-  Wifi, 
-  Snowflake, 
+import {
+  Star,
+  MapPin,
+  Users,
+  Wifi,
+  Snowflake,
   Clock,
   ArrowRight,
-  Heart
+  Heart,
+  Car,
+  Shield,
 } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data for featured libraries
-const featuredLibraries = [
+interface Library {
+  id: string;
+  slug: string;
+  name: string;
+  city: string;
+  state: string;
+  banner_url: string | null;
+  profile_url: string | null;
+  owner_id: string;
+  average_rating: number | null;
+  total_reviews: number | null;
+  total_seats: number | null;
+  facilities: string[] | null;
+  whatsapp_number: string | null;
+  is_featured: boolean | null;
+  status: string | null;
+}
+
+// Fallback mock data when no libraries in DB
+const fallbackLibraries = [
   {
     id: "1",
+    slug: "pandit-ji-library",
+    name: "Pandit Ji Library",
+    city: "Risinghnagar",
+    state: "Rajasthan",
+    banner_url: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&q=80",
+    profile_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
+    owner_id: "",
+    ownerName: "Pawan Kumar",
+    average_rating: 4.9,
+    total_reviews: 156,
+    total_seats: 42,
+    startingPrice: 1500,
+    facilities: ["wifi", "ac", "parking", "power"],
+    whatsapp_number: "918285896680",
+    is_featured: true,
+    status: "approved",
+  },
+  {
+    id: "2",
     slug: "knowledge-hub-delhi",
     name: "Knowledge Hub",
     city: "New Delhi",
     state: "Delhi",
-    image: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&q=80",
+    banner_url: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80",
+    profile_url: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&q=80",
+    owner_id: "",
     ownerName: "Rahul Sharma",
-    rating: 4.9,
-    reviews: 245,
-    totalSeats: 120,
-    startingPrice: 50,
+    average_rating: 4.8,
+    total_reviews: 245,
+    total_seats: 120,
+    startingPrice: 2000,
     facilities: ["wifi", "ac", "parking"],
-    isOpen: true,
-  },
-  {
-    id: "2",
-    slug: "study-nest-mumbai",
-    name: "Study Nest",
-    city: "Mumbai",
-    state: "Maharashtra",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
-    ownerName: "Priya Patel",
-    rating: 4.8,
-    reviews: 189,
-    totalSeats: 80,
-    startingPrice: 60,
-    facilities: ["wifi", "ac"],
-    isOpen: true,
+    whatsapp_number: "919876543210",
+    is_featured: true,
+    status: "approved",
   },
   {
     id: "3",
-    slug: "focus-zone-bangalore",
-    name: "Focus Zone",
-    city: "Bangalore",
-    state: "Karnataka",
-    image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
-    ownerName: "Arun Kumar",
-    rating: 4.7,
-    reviews: 156,
-    totalSeats: 100,
-    startingPrice: 55,
-    facilities: ["wifi", "ac", "parking"],
-    isOpen: false,
+    slug: "study-nest-jaipur",
+    name: "Study Nest",
+    city: "Jaipur",
+    state: "Rajasthan",
+    banner_url: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&q=80",
+    profile_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
+    owner_id: "",
+    ownerName: "Priya Sharma",
+    average_rating: 4.7,
+    total_reviews: 189,
+    total_seats: 80,
+    startingPrice: 1800,
+    facilities: ["wifi", "ac"],
+    whatsapp_number: "919876543211",
+    is_featured: true,
+    status: "approved",
   },
   {
     id: "4",
-    slug: "scholar-space-pune",
-    name: "Scholar Space",
-    city: "Pune",
+    slug: "focus-zone-mumbai",
+    name: "Focus Zone",
+    city: "Mumbai",
     state: "Maharashtra",
-    image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
+    banner_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+    profile_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
+    owner_id: "",
     ownerName: "Vikram Singh",
-    rating: 4.9,
-    reviews: 312,
-    totalSeats: 150,
-    startingPrice: 45,
-    facilities: ["wifi", "ac", "parking"],
-    isOpen: true,
+    average_rating: 4.9,
+    total_reviews: 312,
+    total_seats: 150,
+    startingPrice: 2500,
+    facilities: ["wifi", "ac", "parking", "power"],
+    whatsapp_number: "919876543212",
+    is_featured: true,
+    status: "approved",
   },
 ];
 
 const facilityIcons: Record<string, React.ReactNode> = {
   wifi: <Wifi className="w-3.5 h-3.5" />,
   ac: <Snowflake className="w-3.5 h-3.5" />,
-  parking: <Users className="w-3.5 h-3.5" />,
+  parking: <Car className="w-3.5 h-3.5" />,
+  power: <Shield className="w-3.5 h-3.5" />,
+  silent: <Users className="w-3.5 h-3.5" />,
 };
 
-const LibraryCard = ({ library, index }: { library: typeof featuredLibraries[0]; index: number }) => {
+const LibraryCard = ({
+  library,
+  index,
+}: {
+  library: (typeof fallbackLibraries)[0];
+  index: number;
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -102,19 +146,17 @@ const LibraryCard = ({ library, index }: { library: typeof featuredLibraries[0];
           {/* Image */}
           <div className="relative h-48 overflow-hidden">
             <img
-              src={library.image}
+              src={library.banner_url || "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&q=80"}
               alt={library.name}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
-            
+
             {/* Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
-            
+
             {/* Status Badge */}
             <div className="absolute top-4 left-4">
-              <span className={`badge-${library.isOpen ? 'success' : 'warning'}`}>
-                {library.isOpen ? "Open Now" : "Closed"}
-              </span>
+              <span className="badge-success">Open Now</span>
             </div>
 
             {/* Wishlist Button */}
@@ -122,6 +164,7 @@ const LibraryCard = ({ library, index }: { library: typeof featuredLibraries[0];
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               className="absolute top-4 right-4 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center shadow-lg"
+              onClick={(e) => e.preventDefault()}
             >
               <Heart className="w-4 h-4 text-muted-foreground" />
             </motion.button>
@@ -130,7 +173,7 @@ const LibraryCard = ({ library, index }: { library: typeof featuredLibraries[0];
             <div className="absolute -bottom-6 left-4">
               <div className="w-14 h-14 rounded-xl border-3 border-card overflow-hidden shadow-lg">
                 <img
-                  src={library.profileImage}
+                  src={library.profile_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80"}
                   alt={library.ownerName}
                   className="w-full h-full object-cover"
                 />
@@ -140,8 +183,10 @@ const LibraryCard = ({ library, index }: { library: typeof featuredLibraries[0];
             {/* Price Badge */}
             <div className="absolute bottom-4 right-4 bg-card/90 backdrop-blur-sm px-3 py-1.5 rounded-lg">
               <span className="text-xs text-muted-foreground">From</span>
-              <span className="text-lg font-bold text-primary ml-1">₹{library.startingPrice}</span>
-              <span className="text-xs text-muted-foreground">/hr</span>
+              <span className="text-lg font-bold text-primary ml-1">
+                ₹{library.startingPrice}
+              </span>
+              <span className="text-xs text-muted-foreground">/mo</span>
             </div>
           </div>
 
@@ -154,27 +199,34 @@ const LibraryCard = ({ library, index }: { library: typeof featuredLibraries[0];
               </h3>
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-warning fill-warning" />
-                <span className="font-semibold">{library.rating}</span>
-                <span className="text-muted-foreground text-sm">({library.reviews})</span>
+                <span className="font-semibold">{library.average_rating}</span>
+                <span className="text-muted-foreground text-sm">
+                  ({library.total_reviews})
+                </span>
               </div>
             </div>
 
             {/* Location */}
             <div className="flex items-center gap-1 text-muted-foreground text-sm mb-3">
               <MapPin className="w-4 h-4" />
-              <span>{library.city}, {library.state}</span>
+              <span>
+                {library.city}, {library.state}
+              </span>
             </div>
 
             {/* Owner */}
             <p className="text-sm text-muted-foreground mb-3">
-              by <span className="text-foreground font-medium">{library.ownerName}</span>
+              by{" "}
+              <span className="text-foreground font-medium">
+                {library.ownerName}
+              </span>
             </p>
 
             {/* Bottom Row */}
             <div className="flex items-center justify-between pt-3 border-t border-border">
               {/* Facilities */}
               <div className="flex items-center gap-2">
-                {library.facilities.map((facility) => (
+                {library.facilities?.slice(0, 3).map((facility) => (
                   <div
                     key={facility}
                     className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground"
@@ -184,11 +236,19 @@ const LibraryCard = ({ library, index }: { library: typeof featuredLibraries[0];
                 ))}
               </div>
 
-              {/* Seats Info */}
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Users className="w-4 h-4" />
-                <span>{library.totalSeats} seats</span>
-              </div>
+              {/* WhatsApp */}
+              {library.whatsapp_number && (
+                <a
+                  href={`https://wa.me/${library.whatsapp_number}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 text-sm text-success hover:underline"
+                >
+                  <FaWhatsapp className="w-4 h-4" />
+                  Chat
+                </a>
+              )}
             </div>
           </div>
         </motion.div>
@@ -197,7 +257,70 @@ const LibraryCard = ({ library, index }: { library: typeof featuredLibraries[0];
   );
 };
 
+const LibraryCardSkeleton = () => (
+  <div className="card-premium overflow-hidden">
+    <Skeleton className="h-48 w-full" />
+    <div className="p-4 pt-8 space-y-3">
+      <div className="flex justify-between">
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-6 w-16" />
+      </div>
+      <Skeleton className="h-4 w-24" />
+      <Skeleton className="h-4 w-20" />
+      <div className="flex justify-between pt-3 border-t border-border">
+        <div className="flex gap-2">
+          <Skeleton className="h-7 w-7 rounded-lg" />
+          <Skeleton className="h-7 w-7 rounded-lg" />
+          <Skeleton className="h-7 w-7 rounded-lg" />
+        </div>
+        <Skeleton className="h-5 w-12" />
+      </div>
+    </div>
+  </div>
+);
+
 const FeaturedLibraries = () => {
+  const [libraries, setLibraries] = useState<typeof fallbackLibraries>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLibraries();
+  }, []);
+
+  const fetchLibraries = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("libraries")
+        .select(`
+          *,
+          profiles:owner_id (full_name),
+          shifts (price_per_seat, monthly_price)
+        `)
+        .eq("status", "approved")
+        .eq("is_featured", true)
+        .limit(4);
+
+      if (data && data.length > 0) {
+        const formattedLibraries = data.map((lib: any) => ({
+          ...lib,
+          ownerName: lib.profiles?.full_name || "Library Owner",
+          startingPrice: lib.shifts?.[0]?.monthly_price || lib.shifts?.[0]?.price_per_seat || 1500,
+          facilities: Array.isArray(lib.facilities) ? lib.facilities : [],
+        }));
+        setLibraries(formattedLibraries);
+      } else {
+        // Use fallback data if no libraries in DB
+        setLibraries(fallbackLibraries);
+      }
+    } catch (error) {
+      console.error("Error fetching libraries:", error);
+      setLibraries(fallbackLibraries);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <section className="py-20 md:py-28 bg-muted/30">
       <div className="section-container">
@@ -222,7 +345,7 @@ const FeaturedLibraries = () => {
               Top-Rated Study Spaces
             </motion.h2>
           </div>
-          
+
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -240,9 +363,11 @@ const FeaturedLibraries = () => {
 
         {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredLibraries.map((library, index) => (
-            <LibraryCard key={library.id} library={library} index={index} />
-          ))}
+          {isLoading
+            ? [1, 2, 3, 4].map((i) => <LibraryCardSkeleton key={i} />)
+            : libraries.map((library, index) => (
+                <LibraryCard key={library.id} library={library} index={index} />
+              ))}
         </div>
       </div>
     </section>
