@@ -121,6 +121,7 @@ const OwnerLibrary = () => {
 
     setIsSaving(true);
     try {
+      const generatedSlug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const libraryData = {
         name: formData.name,
         description: formData.description,
@@ -139,6 +140,7 @@ const OwnerLibrary = () => {
         seats_per_row: formData.seats_per_row,
         total_seats: formData.total_rows * formData.seats_per_row,
         owner_id: user.id,
+        slug: generatedSlug,
       };
 
       if (library) {
