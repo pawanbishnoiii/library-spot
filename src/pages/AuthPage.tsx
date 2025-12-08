@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   BookOpen, 
@@ -11,21 +11,48 @@ import {
   EyeOff,
   ArrowRight,
   ArrowLeft,
-  Check
+  Check,
+  Building2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
 
-type AuthMode = "login" | "signup" | "forgot";
+type AuthMode = "login" | "signup" | "forgot" | "owner-signup";
+
+const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone must be at least 10 digits").max(15),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
 
 const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const { user, isLoading: authLoading } = useAuth();
+  
+  const isOwnerSignup = location.pathname.includes("owner") || searchParams.get("type") === "owner";
   const isSignup = location.pathname.includes("signup");
   
-  const [mode, setMode] = useState<AuthMode>(isSignup ? "signup" : "login");
+  const [mode, setMode] = useState<AuthMode>(
+    isOwnerSignup ? "owner-signup" : isSignup ? "signup" : "login"
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState({
     name: "",
@@ -35,39 +62,149 @@ const AuthPage = () => {
     confirmPassword: "",
   });
 
+  useEffect(() => {
+    if (user && !authLoading) {
+      navigate("/");
+    }
+  }, [user, authLoading, navigate]);
+
+  const validateForm = () => {
+    setErrors({});
+    try {
+      if (mode === "login") {
+        loginSchema.parse({ email: formData.email, password: formData.password });
+      } else if (mode === "signup" || mode === "owner-signup") {
+        signupSchema.parse(formData);
+      }
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            newErrors[err.path[0].toString()] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+    
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
 
-    if (mode === "login") {
+        if (error) {
+          if (error.message.includes("Invalid login credentials")) {
+            toast({
+              title: "Login Failed",
+              description: "Invalid email or password. Please try again.",
+              variant: "destructive",
+            });
+          } else {
+            throw error;
+          }
+        } else {
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully logged in.",
+          });
+          navigate("/");
+        }
+      } else if (mode === "signup" || mode === "owner-signup") {
+        const redirectUrl = `${window.location.origin}/`;
+        
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              full_name: formData.name,
+              phone: formData.phone,
+            },
+          },
+        });
+
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast({
+              title: "Account Exists",
+              description: "This email is already registered. Please login instead.",
+              variant: "destructive",
+            });
+            setMode("login");
+          } else {
+            throw error;
+          }
+        } else if (data.user) {
+          // If owner signup, update role
+          if (mode === "owner-signup") {
+            const { error: roleError } = await supabase
+              .from("user_roles")
+              .update({ role: "owner" })
+              .eq("user_id", data.user.id);
+            
+            if (roleError) {
+              console.error("Role update error:", roleError);
+            }
+          }
+
+          toast({
+            title: "Account created!",
+            description: "You can now login to your account.",
+          });
+          setMode("login");
+        }
+      } else if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: "Reset link sent!",
+          description: "Check your email for password reset instructions.",
+        });
+        setMode("login");
+      }
+    } catch (error: any) {
       toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+        title: "Error",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
       });
-      navigate("/");
-    } else if (mode === "signup") {
-      toast({
-        title: "Account created!",
-        description: "Please check your email to verify your account.",
-      });
-      setMode("login");
-    } else {
-      toast({
-        title: "Reset link sent!",
-        description: "Check your email for password reset instructions.",
-      });
-      setMode("login");
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: "" });
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -88,25 +225,57 @@ const AuthPage = () => {
             </span>
           </Link>
 
+          {/* Mode Tabs for signup */}
+          {(mode === "signup" || mode === "owner-signup") && (
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setMode("signup")}
+                className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+                  mode === "signup"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                <User className="w-4 h-4 inline mr-2" />
+                Student Signup
+              </button>
+              <button
+                onClick={() => setMode("owner-signup")}
+                className={`flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-all ${
+                  mode === "owner-signup"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                <Building2 className="w-4 h-4 inline mr-2" />
+                Library Owner
+              </button>
+            </div>
+          )}
+
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-heading text-3xl font-bold mb-2">
               {mode === "login" && "Welcome back"}
-              {mode === "signup" && "Create account"}
+              {mode === "signup" && "Create Student Account"}
+              {mode === "owner-signup" && "Join Library Program"}
               {mode === "forgot" && "Reset password"}
             </h1>
             <p className="text-muted-foreground">
               {mode === "login" && "Enter your credentials to access your account"}
-              {mode === "signup" && "Fill in your details to get started"}
+              {mode === "signup" && "Sign up to book seats at libraries"}
+              {mode === "owner-signup" && "Register your library and start earning"}
               {mode === "forgot" && "Enter your email to receive reset instructions"}
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === "signup" && (
+            {(mode === "signup" || mode === "owner-signup") && (
               <div>
-                <label className="text-sm font-medium mb-2 block">Full Name</label>
+                <label className="text-sm font-medium mb-2 block">
+                  {mode === "owner-signup" ? "Your Name" : "Full Name"}
+                </label>
                 <div className="relative">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input
@@ -115,10 +284,10 @@ const AuthPage = () => {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="John Doe"
-                    required
-                    className="input-premium pl-12"
+                    className={`input-premium pl-12 ${errors.name ? "border-destructive" : ""}`}
                   />
                 </div>
+                {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
               </div>
             )}
 
@@ -132,13 +301,13 @@ const AuthPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
-                  required
-                  className="input-premium pl-12"
+                  className={`input-premium pl-12 ${errors.email ? "border-destructive" : ""}`}
                 />
               </div>
+              {errors.email && <p className="text-destructive text-sm mt-1">{errors.email}</p>}
             </div>
 
-            {mode === "signup" && (
+            {(mode === "signup" || mode === "owner-signup") && (
               <div>
                 <label className="text-sm font-medium mb-2 block">Phone Number</label>
                 <div className="relative">
@@ -149,10 +318,10 @@ const AuthPage = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     placeholder="+91 98765 43210"
-                    required
-                    className="input-premium pl-12"
+                    className={`input-premium pl-12 ${errors.phone ? "border-destructive" : ""}`}
                   />
                 </div>
+                {errors.phone && <p className="text-destructive text-sm mt-1">{errors.phone}</p>}
               </div>
             )}
 
@@ -167,8 +336,7 @@ const AuthPage = () => {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    required
-                    className="input-premium pl-12 pr-12"
+                    className={`input-premium pl-12 pr-12 ${errors.password ? "border-destructive" : ""}`}
                   />
                   <button
                     type="button"
@@ -178,10 +346,11 @@ const AuthPage = () => {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                {errors.password && <p className="text-destructive text-sm mt-1">{errors.password}</p>}
               </div>
             )}
 
-            {mode === "signup" && (
+            {(mode === "signup" || mode === "owner-signup") && (
               <div>
                 <label className="text-sm font-medium mb-2 block">Confirm Password</label>
                 <div className="relative">
@@ -192,10 +361,10 @@ const AuthPage = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="••••••••"
-                    required
-                    className="input-premium pl-12"
+                    className={`input-premium pl-12 ${errors.confirmPassword ? "border-destructive" : ""}`}
                   />
                 </div>
+                {errors.confirmPassword && <p className="text-destructive text-sm mt-1">{errors.confirmPassword}</p>}
               </div>
             )}
 
@@ -226,55 +395,13 @@ const AuthPage = () => {
                 <>
                   {mode === "login" && "Sign In"}
                   {mode === "signup" && "Create Account"}
+                  {mode === "owner-signup" && "Register as Owner"}
                   {mode === "forgot" && "Send Reset Link"}
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </Button>
           </form>
-
-          {/* Divider */}
-          {mode !== "forgot" && (
-            <>
-              <div className="relative my-8">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                </div>
-              </div>
-
-              {/* Social Login */}
-              <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-12">
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                    <path
-                      fill="currentColor"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  Google
-                </Button>
-                <Button variant="outline" className="h-12">
-                  <Phone className="w-5 h-5 mr-2" />
-                  Phone OTP
-                </Button>
-              </div>
-            </>
-          )}
 
           {/* Switch Mode */}
           <div className="mt-8 text-center">
@@ -289,7 +416,7 @@ const AuthPage = () => {
                 </button>
               </p>
             )}
-            {mode === "signup" && (
+            {(mode === "signup" || mode === "owner-signup") && (
               <p className="text-muted-foreground">
                 Already have an account?{" "}
                 <button
@@ -343,35 +470,70 @@ const AuthPage = () => {
             className="text-center max-w-lg"
           >
             <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center mx-auto mb-8">
-              <BookOpen className="w-10 h-10" />
+              {mode === "owner-signup" ? (
+                <Building2 className="w-10 h-10" />
+              ) : (
+                <BookOpen className="w-10 h-10" />
+              )}
             </div>
             
             <h2 className="font-heading text-3xl font-bold mb-4">
-              Your Perfect Study Space Awaits
+              {mode === "owner-signup" 
+                ? "Grow Your Library Business"
+                : "Your Perfect Study Space Awaits"
+              }
             </h2>
             <p className="text-white/80 mb-8">
-              Join thousands of students who have found their ideal study environment through LibraryBook.
+              {mode === "owner-signup"
+                ? "Join 500+ library owners earning with LibraryBook. Get more students, manage bookings easily."
+                : "Join thousands of students who have found their ideal study environment through LibraryBook."
+              }
             </p>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5" />
-                </div>
-                <p className="text-left text-sm">500+ verified libraries across 100+ cities</p>
-              </div>
-              <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5" />
-                </div>
-                <p className="text-left text-sm">Instant seat booking with real-time availability</p>
-              </div>
-              <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                  <Check className="w-5 h-5" />
-                </div>
-                <p className="text-left text-sm">Secure UPI payments with transparent pricing</p>
-              </div>
+              {mode === "owner-signup" ? (
+                <>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <p className="text-left text-sm">Free listing and easy dashboard management</p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <p className="text-left text-sm">Direct UPI payments - no commission deducted</p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <p className="text-left text-sm">Real-time booking notifications & analytics</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <p className="text-left text-sm">500+ verified libraries across 100+ cities</p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <p className="text-left text-sm">Instant seat booking with real-time availability</p>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
+                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <p className="text-left text-sm">Secure UPI payments with transparent pricing</p>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </div>

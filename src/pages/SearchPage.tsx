@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useSearchParams } from "react-router-dom";
 import {
@@ -9,131 +9,45 @@ import {
   Wifi,
   Snowflake,
   Car,
-  Filter,
   X,
-  ChevronDown,
   SlidersHorizontal,
   Grid,
   List,
   Heart,
+  Clock,
+  IndianRupee,
 } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock library data
-const mockLibraries = [
-  {
-    id: "1",
-    slug: "knowledge-hub-delhi",
-    name: "Knowledge Hub",
-    city: "New Delhi",
-    state: "Delhi",
-    address: "123 Study Lane, Connaught Place",
-    image: "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&q=80",
-    ownerName: "Rahul Sharma",
-    rating: 4.9,
-    reviews: 245,
-    totalSeats: 120,
-    startingPrice: 50,
-    facilities: ["wifi", "ac", "parking", "silent_zone", "power_backup"],
-    shifts: ["morning", "afternoon", "evening", "night"],
-    isOpen: true,
-  },
-  {
-    id: "2",
-    slug: "study-nest-mumbai",
-    name: "Study Nest",
-    city: "Mumbai",
-    state: "Maharashtra",
-    address: "45 Book Street, Andheri West",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80",
-    ownerName: "Priya Patel",
-    rating: 4.8,
-    reviews: 189,
-    totalSeats: 80,
-    startingPrice: 60,
-    facilities: ["wifi", "ac", "power_backup"],
-    shifts: ["morning", "afternoon", "evening"],
-    isOpen: true,
-  },
-  {
-    id: "3",
-    slug: "focus-zone-bangalore",
-    name: "Focus Zone",
-    city: "Bangalore",
-    state: "Karnataka",
-    address: "78 Learning Road, Koramangala",
-    image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
-    ownerName: "Arun Kumar",
-    rating: 4.7,
-    reviews: 156,
-    totalSeats: 100,
-    startingPrice: 55,
-    facilities: ["wifi", "ac", "parking", "silent_zone"],
-    shifts: ["morning", "afternoon", "evening", "night"],
-    isOpen: false,
-  },
-  {
-    id: "4",
-    slug: "scholar-space-pune",
-    name: "Scholar Space",
-    city: "Pune",
-    state: "Maharashtra",
-    address: "34 Education Park, Hinjewadi",
-    image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80",
-    ownerName: "Vikram Singh",
-    rating: 4.9,
-    reviews: 312,
-    totalSeats: 150,
-    startingPrice: 45,
-    facilities: ["wifi", "ac", "parking", "power_backup"],
-    shifts: ["morning", "afternoon", "evening"],
-    isOpen: true,
-  },
-  {
-    id: "5",
-    slug: "quiet-corner-hyderabad",
-    name: "Quiet Corner",
-    city: "Hyderabad",
-    state: "Telangana",
-    address: "12 Silent Street, Madhapur",
-    image: "https://images.unsplash.com/photo-1568667256549-094345857637?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80",
-    ownerName: "Sanjay Reddy",
-    rating: 4.6,
-    reviews: 98,
-    totalSeats: 60,
-    startingPrice: 40,
-    facilities: ["wifi", "ac", "silent_zone"],
-    shifts: ["morning", "afternoon"],
-    isOpen: true,
-  },
-  {
-    id: "6",
-    slug: "brain-boost-chennai",
-    name: "Brain Boost Library",
-    city: "Chennai",
-    state: "Tamil Nadu",
-    address: "56 Knowledge Avenue, T Nagar",
-    image: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&q=80",
-    profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80",
-    ownerName: "Karthik Iyer",
-    rating: 4.8,
-    reviews: 167,
-    totalSeats: 90,
-    startingPrice: 35,
-    facilities: ["wifi", "ac", "parking", "power_backup", "silent_zone"],
-    shifts: ["morning", "afternoon", "evening", "night"],
-    isOpen: true,
-  },
-];
+interface Library {
+  id: string;
+  slug: string;
+  name: string;
+  city: string;
+  state: string;
+  address: string;
+  banner_url: string | null;
+  profile_url: string | null;
+  average_rating: number | null;
+  total_reviews: number | null;
+  total_seats: number | null;
+  facilities: any;
+  whatsapp_number: string | null;
+  owner_id: string;
+  minPrice?: number;
+}
+
+interface Profile {
+  id: string;
+  full_name: string;
+}
 
 const facilityOptions = [
   { id: "wifi", label: "WiFi", icon: Wifi },
@@ -159,14 +73,90 @@ const sortOptions = [
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("location") || "");
+  const [libraries, setLibraries] = useState<Library[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [cities, setCities] = useState<string[]>([]);
+  const [states, setStates] = useState<string[]>([]);
+  
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [selectedCity, setSelectedCity] = useState(searchParams.get("city") || "");
+  const [selectedState, setSelectedState] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [priceRange, setPriceRange] = useState([0, 100]);
-  const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState([0, 200]);
+  const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
+    searchParams.get("facilities")?.split(",").filter(Boolean) || []
+  );
   const [selectedShifts, setSelectedShifts] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("rating");
   const [ratingFilter, setRatingFilter] = useState(0);
+
+  useEffect(() => {
+    fetchLibraries();
+  }, []);
+
+  const fetchLibraries = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch libraries
+      const { data: librariesData, error } = await supabase
+        .from("libraries")
+        .select("*")
+        .eq("status", "approved");
+
+      if (error) throw error;
+
+      if (librariesData) {
+        // Fetch min price for each library from shifts
+        const libraryIds = librariesData.map(lib => lib.id);
+        const { data: shiftsData } = await supabase
+          .from("shifts")
+          .select("library_id, price_per_seat")
+          .in("library_id", libraryIds)
+          .eq("is_active", true);
+
+        const minPrices: Record<string, number> = {};
+        shiftsData?.forEach(shift => {
+          if (!minPrices[shift.library_id] || shift.price_per_seat < minPrices[shift.library_id]) {
+            minPrices[shift.library_id] = shift.price_per_seat;
+          }
+        });
+
+        const librariesWithPrices = librariesData.map(lib => ({
+          ...lib,
+          minPrice: minPrices[lib.id] || 0
+        }));
+
+        setLibraries(librariesWithPrices);
+        
+        // Get unique cities and states
+        const uniqueCities = [...new Set(librariesData.map(lib => lib.city))];
+        const uniqueStates = [...new Set(librariesData.map(lib => lib.state))];
+        setCities(uniqueCities);
+        setStates(uniqueStates);
+
+        // Fetch owner profiles
+        const ownerIds = [...new Set(librariesData.map(lib => lib.owner_id))];
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", ownerIds);
+
+        if (profilesData) {
+          const profilesMap: Record<string, Profile> = {};
+          profilesData.forEach(p => {
+            profilesMap[p.id] = p;
+          });
+          setProfiles(profilesMap);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching libraries:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const toggleFacility = (facility: string) => {
     setSelectedFacilities((prev) =>
@@ -181,7 +171,7 @@ const SearchPage = () => {
   };
 
   const filteredLibraries = useMemo(() => {
-    let result = [...mockLibraries];
+    let result = [...libraries];
 
     // Search filter
     if (searchQuery) {
@@ -194,52 +184,58 @@ const SearchPage = () => {
       );
     }
 
+    // City filter
+    if (selectedCity) {
+      result = result.filter(lib => lib.city === selectedCity);
+    }
+
+    // State filter
+    if (selectedState) {
+      result = result.filter(lib => lib.state === selectedState);
+    }
+
     // Price filter
     result = result.filter(
-      (lib) => lib.startingPrice >= priceRange[0] && lib.startingPrice <= priceRange[1]
+      (lib) => (lib.minPrice || 0) >= priceRange[0] && (lib.minPrice || 0) <= priceRange[1]
     );
 
     // Facilities filter
     if (selectedFacilities.length > 0) {
-      result = result.filter((lib) =>
-        selectedFacilities.every((f) => lib.facilities.includes(f))
-      );
-    }
-
-    // Shifts filter
-    if (selectedShifts.length > 0) {
-      result = result.filter((lib) =>
-        selectedShifts.some((s) => lib.shifts.includes(s))
-      );
+      result = result.filter((lib) => {
+        const libFacilities = Array.isArray(lib.facilities) ? lib.facilities : [];
+        return selectedFacilities.every((f) => libFacilities.includes(f));
+      });
     }
 
     // Rating filter
     if (ratingFilter > 0) {
-      result = result.filter((lib) => lib.rating >= ratingFilter);
+      result = result.filter((lib) => (lib.average_rating || 0) >= ratingFilter);
     }
 
     // Sorting
     switch (sortBy) {
       case "rating":
-        result.sort((a, b) => b.rating - a.rating);
+        result.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
         break;
       case "price_low":
-        result.sort((a, b) => a.startingPrice - b.startingPrice);
+        result.sort((a, b) => (a.minPrice || 0) - (b.minPrice || 0));
         break;
       case "price_high":
-        result.sort((a, b) => b.startingPrice - a.startingPrice);
+        result.sort((a, b) => (b.minPrice || 0) - (a.minPrice || 0));
         break;
       case "reviews":
-        result.sort((a, b) => b.reviews - a.reviews);
+        result.sort((a, b) => (b.total_reviews || 0) - (a.total_reviews || 0));
         break;
     }
 
     return result;
-  }, [searchQuery, priceRange, selectedFacilities, selectedShifts, sortBy, ratingFilter]);
+  }, [libraries, searchQuery, selectedCity, selectedState, priceRange, selectedFacilities, sortBy, ratingFilter]);
 
   const clearFilters = () => {
     setSearchQuery("");
-    setPriceRange([0, 100]);
+    setSelectedCity("");
+    setSelectedState("");
+    setPriceRange([0, 200]);
     setSelectedFacilities([]);
     setSelectedShifts([]);
     setRatingFilter(0);
@@ -248,11 +244,142 @@ const SearchPage = () => {
 
   const hasActiveFilters =
     searchQuery ||
+    selectedCity ||
+    selectedState ||
     priceRange[0] > 0 ||
-    priceRange[1] < 100 ||
+    priceRange[1] < 200 ||
     selectedFacilities.length > 0 ||
     selectedShifts.length > 0 ||
     ratingFilter > 0;
+
+  const LibraryCard = ({ library }: { library: Library }) => {
+    const owner = profiles[library.owner_id];
+    
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ y: -5 }}
+        className={`bg-card rounded-2xl border border-border overflow-hidden group ${
+          viewMode === "list" ? "flex" : ""
+        }`}
+      >
+        {/* Image */}
+        <div className={`relative ${viewMode === "list" ? "w-72 flex-shrink-0" : "aspect-[4/3]"}`}>
+          <img
+            src={library.banner_url || "https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=800&q=80"}
+            alt={library.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 to-transparent" />
+          
+          {/* Profile Image */}
+          <div className="absolute -bottom-6 left-4">
+            <img
+              src={library.profile_url || "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&q=80"}
+              alt={owner?.full_name || "Owner"}
+              className="w-14 h-14 rounded-full border-3 border-card object-cover"
+            />
+          </div>
+
+          {/* Heart */}
+          <button className="absolute top-3 right-3 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Heart className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 pt-8 flex-1">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div>
+              <h3 className="font-heading font-semibold text-lg group-hover:text-primary transition-colors">
+                {library.name}
+              </h3>
+              <p className="text-sm text-muted-foreground">{owner?.full_name || "Library Owner"}</p>
+            </div>
+            <div className="flex items-center gap-1 bg-warning/10 text-warning px-2 py-1 rounded-lg">
+              <Star className="w-4 h-4 fill-current" />
+              <span className="font-semibold text-sm">{library.average_rating?.toFixed(1) || "New"}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+            <MapPin className="w-4 h-4" />
+            <span>{library.city}, {library.state}</span>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{library.address}</p>
+
+          {/* Facilities */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {Array.isArray(library.facilities) && library.facilities.slice(0, 3).map((facility: string) => (
+              <span key={facility} className="px-2 py-1 rounded-full bg-muted text-xs">
+                {facility}
+              </span>
+            ))}
+            {Array.isArray(library.facilities) && library.facilities.length > 3 && (
+              <span className="px-2 py-1 rounded-full bg-muted text-xs">
+                +{library.facilities.length - 3}
+              </span>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1 text-sm">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <span>{library.total_seats || 0} seats</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <IndianRupee className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-primary">{library.minPrice || 0}</span>
+                <span className="text-sm text-muted-foreground">/hr</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {library.whatsapp_number && (
+                <a
+                  href={`https://wa.me/${library.whatsapp_number.replace(/\s/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-9 h-9 rounded-full bg-success/10 text-success flex items-center justify-center hover:bg-success hover:text-white transition-colors"
+                >
+                  <FaWhatsapp className="w-4 h-4" />
+                </a>
+              )}
+              <Link
+                to={`/library/${library.slug}`}
+                className="btn-primary px-4 py-2 text-sm"
+              >
+                View
+              </Link>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  const SkeletonCard = () => (
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
+      <Skeleton className="aspect-[4/3]" />
+      <div className="p-4 pt-8 space-y-3">
+        <Skeleton className="h-6 w-3/4" />
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-full" />
+        <div className="flex gap-2">
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+        <div className="flex justify-between pt-4">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-8 w-20" />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -274,6 +401,18 @@ const SearchPage = () => {
                   className="w-full pl-12 pr-4 py-4 rounded-xl bg-card border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                 />
               </div>
+
+              {/* City Filter */}
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="px-4 py-4 rounded-xl bg-card border border-border focus:border-primary outline-none"
+              >
+                <option value="">All Cities</option>
+                {cities.map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
 
               {/* Filter Toggle (Mobile) */}
               <Button
@@ -317,6 +456,21 @@ const SearchPage = () => {
                   </div>
 
                   <div className="space-y-6">
+                    {/* State Filter */}
+                    <div className="p-4 rounded-xl bg-card border border-border">
+                      <h4 className="font-semibold mb-4">State</h4>
+                      <select
+                        value={selectedState}
+                        onChange={(e) => setSelectedState(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-muted border border-border"
+                      >
+                        <option value="">All States</option>
+                        {states.map(state => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </select>
+                    </div>
+
                     {/* Price Range */}
                     <div className="p-4 rounded-xl bg-card border border-border">
                       <h4 className="font-semibold mb-4">Price Range</h4>
@@ -324,7 +478,7 @@ const SearchPage = () => {
                         value={priceRange}
                         onValueChange={setPriceRange}
                         min={0}
-                        max={100}
+                        max={200}
                         step={5}
                         className="mb-2"
                       />
@@ -471,136 +625,34 @@ const SearchPage = () => {
               </div>
 
               {/* Results Grid */}
-              {filteredLibraries.length > 0 ? (
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                </div>
+              ) : filteredLibraries.length > 0 ? (
                 <div
                   className={`grid gap-6 ${
                     viewMode === "grid"
-                      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                       : "grid-cols-1"
                   }`}
                 >
-                  {filteredLibraries.map((library, index) => (
-                    <motion.div
-                      key={library.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      <Link to={`/library/${library.slug}`}>
-                        <motion.div
-                          whileHover={{ y: -5 }}
-                          className={`group card-premium overflow-hidden ${
-                            viewMode === "list" ? "flex" : ""
-                          }`}
-                        >
-                          {/* Image */}
-                          <div
-                            className={`relative overflow-hidden ${
-                              viewMode === "list" ? "w-48 h-full" : "h-48"
-                            }`}
-                          >
-                            <img
-                              src={library.image}
-                              alt={library.name}
-                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-transparent" />
-
-                            {/* Status Badge */}
-                            <div className="absolute top-3 left-3">
-                              <span
-                                className={`badge-${library.isOpen ? "success" : "warning"}`}
-                              >
-                                {library.isOpen ? "Open" : "Closed"}
-                              </span>
-                            </div>
-
-                            {/* Wishlist */}
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={(e) => e.preventDefault()}
-                              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center"
-                            >
-                              <Heart className="w-4 h-4" />
-                            </motion.button>
-
-                            {/* Price */}
-                            <div className="absolute bottom-3 right-3 bg-card/90 backdrop-blur-sm px-2 py-1 rounded-lg">
-                              <span className="font-bold text-primary">
-                                ₹{library.startingPrice}
-                              </span>
-                              <span className="text-xs text-muted-foreground">/hr</span>
-                            </div>
-                          </div>
-
-                          {/* Content */}
-                          <div className={`p-4 ${viewMode === "list" ? "flex-1" : ""}`}>
-                            <div className="flex items-start justify-between mb-2">
-                              <h3 className="font-heading font-semibold text-lg group-hover:text-primary transition-colors">
-                                {library.name}
-                              </h3>
-                              <div className="flex items-center gap-1">
-                                <Star className="w-4 h-4 text-warning fill-warning" />
-                                <span className="font-semibold">{library.rating}</span>
-                                <span className="text-muted-foreground text-sm">
-                                  ({library.reviews})
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 text-muted-foreground text-sm mb-2">
-                              <MapPin className="w-4 h-4" />
-                              <span>
-                                {library.city}, {library.state}
-                              </span>
-                            </div>
-
-                            <p className="text-sm text-muted-foreground mb-3">
-                              by{" "}
-                              <span className="text-foreground font-medium">
-                                {library.ownerName}
-                              </span>
-                            </p>
-
-                            <div className="flex items-center justify-between pt-3 border-t border-border">
-                              <div className="flex items-center gap-1.5">
-                                {library.facilities.slice(0, 4).map((f) => {
-                                  const FacilityIcon =
-                                    facilityOptions.find((fo) => fo.id === f)?.icon || Users;
-                                  return (
-                                    <div
-                                      key={f}
-                                      className="w-6 h-6 rounded bg-muted flex items-center justify-center"
-                                    >
-                                      <FacilityIcon className="w-3 h-3 text-muted-foreground" />
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Users className="w-4 h-4" />
-                                <span>{library.totalSeats} seats</span>
-                              </div>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </Link>
-                    </motion.div>
+                  {filteredLibraries.map((library) => (
+                    <LibraryCard key={library.id} library={library} />
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-8 h-8 text-muted-foreground" />
+                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+                    <Search className="w-10 h-10 text-muted-foreground" />
                   </div>
                   <h3 className="font-heading text-xl font-semibold mb-2">No libraries found</h3>
-                  <p className="text-muted-foreground mb-4">
+                  <p className="text-muted-foreground mb-6">
                     Try adjusting your filters or search query
                   </p>
-                  <Button onClick={clearFilters} variant="outline">
-                    Clear Filters
-                  </Button>
+                  <Button onClick={clearFilters}>Clear All Filters</Button>
                 </div>
               )}
             </div>
