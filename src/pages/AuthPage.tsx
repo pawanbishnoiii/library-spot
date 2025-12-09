@@ -11,9 +11,9 @@ import {
   EyeOff,
   ArrowRight,
   ArrowLeft,
-  Check,
   Building2
 } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +42,7 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, role } = useAuth();
   
   const isOwnerSignup = location.pathname.includes("owner") || searchParams.get("type") === "owner";
   const isSignup = location.pathname.includes("signup");
@@ -64,9 +64,16 @@ const AuthPage = () => {
 
   useEffect(() => {
     if (user && !authLoading) {
-      navigate("/");
+      // Redirect based on role
+      if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else if (role === "owner") {
+        navigate("/owner/dashboard");
+      } else {
+        navigate("/user/dashboard");
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, role, navigate]);
 
   const validateForm = () => {
     setErrors({});
@@ -88,6 +95,25 @@ const AuthPage = () => {
         setErrors(newErrors);
       }
       return false;
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const redirectUrl = `${window.location.origin}/onboarding`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign in with Google",
+        variant: "destructive",
+      });
     }
   };
 
@@ -120,7 +146,6 @@ const AuthPage = () => {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          navigate("/");
         }
       } else if (mode === "signup" || mode === "owner-signup") {
         const redirectUrl = `${window.location.origin}/`;
@@ -268,6 +293,29 @@ const AuthPage = () => {
               {mode === "forgot" && "Enter your email to receive reset instructions"}
             </p>
           </div>
+
+          {/* Google Sign In */}
+          {mode !== "forgot" && (
+            <div className="mb-6">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12 gap-3 text-base"
+                onClick={handleGoogleSignIn}
+              >
+                <FcGoogle className="w-5 h-5" />
+                Continue with Google
+              </Button>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -442,7 +490,6 @@ const AuthPage = () => {
 
       {/* Right - Image/Branding */}
       <div className="hidden lg:flex lg:flex-1 relative bg-gradient-primary">
-        {/* Decorative Elements */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
             animate={{
@@ -476,64 +523,31 @@ const AuthPage = () => {
                 <BookOpen className="w-10 h-10" />
               )}
             </div>
-            
+
             <h2 className="font-heading text-3xl font-bold mb-4">
-              {mode === "owner-signup" 
-                ? "Grow Your Library Business"
-                : "Your Perfect Study Space Awaits"
-              }
-            </h2>
-            <p className="text-white/80 mb-8">
               {mode === "owner-signup"
-                ? "Join 500+ library owners earning with LibraryBook. Get more students, manage bookings easily."
-                : "Join thousands of students who have found their ideal study environment through LibraryBook."
-              }
+                ? "Grow Your Library Business"
+                : "Find Your Perfect Study Space"}
+            </h2>
+            <p className="text-white/80 text-lg">
+              {mode === "owner-signup"
+                ? "Join hundreds of library owners and reach thousands of students looking for the perfect study environment."
+                : "Discover premium study spaces near you with modern amenities and a quiet environment for focused learning."}
             </p>
 
-            <div className="space-y-4">
-              {mode === "owner-signup" ? (
-                <>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5" />
-                    </div>
-                    <p className="text-left text-sm">Free listing and easy dashboard management</p>
-                  </div>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5" />
-                    </div>
-                    <p className="text-left text-sm">Direct UPI payments - no commission deducted</p>
-                  </div>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5" />
-                    </div>
-                    <p className="text-left text-sm">Real-time booking notifications & analytics</p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5" />
-                    </div>
-                    <p className="text-left text-sm">500+ verified libraries across 100+ cities</p>
-                  </div>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5" />
-                    </div>
-                    <p className="text-left text-sm">Instant seat booking with real-time availability</p>
-                  </div>
-                  <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4 backdrop-blur-sm">
-                    <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center flex-shrink-0">
-                      <Check className="w-5 h-5" />
-                    </div>
-                    <p className="text-left text-sm">Secure UPI payments with transparent pricing</p>
-                  </div>
-                </>
-              )}
+            <div className="mt-8 grid grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold">500+</div>
+                <div className="text-sm text-white/70">Libraries</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold">50K+</div>
+                <div className="text-sm text-white/70">Students</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold">100+</div>
+                <div className="text-sm text-white/70">Cities</div>
+              </div>
             </div>
           </motion.div>
         </div>
