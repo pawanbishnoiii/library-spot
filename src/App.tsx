@@ -47,7 +47,7 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
   const { user, role, isLoading } = useAuth();
   
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
