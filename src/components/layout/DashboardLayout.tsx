@@ -18,6 +18,8 @@ import {
   MessageSquare,
   User,
   Armchair,
+  Bed,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,11 +40,13 @@ const userMenuItems = [
 
 const ownerMenuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/owner/dashboard" },
-  { icon: Building2, label: "My Library", path: "/owner/library" },
+  { icon: Building2, label: "My Property", path: "/owner/library" },
   { icon: Armchair, label: "Manage Seats", path: "/owner/seats" },
+  { icon: Bed, label: "Rooms & Beds", path: "/owner/rooms" },
   { icon: Calendar, label: "Bookings", path: "/owner/bookings" },
   { icon: CreditCard, label: "Payments", path: "/owner/payments" },
   { icon: Users, label: "Staff", path: "/owner/staff" },
+  { icon: Eye, label: "Visitors", path: "/owner/visitors" },
   { icon: Bell, label: "Notifications", path: "/owner/notifications" },
   { icon: Settings, label: "Settings", path: "/owner/settings" },
 ];
