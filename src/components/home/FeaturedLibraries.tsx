@@ -17,6 +17,7 @@ import { FaWhatsapp } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { useWishlist } from "@/hooks/useWishlist";
 
 interface Library {
   id: string;
@@ -131,6 +132,8 @@ const LibraryCard = ({
   library: (typeof fallbackLibraries)[0];
   index: number;
 }) => {
+  const { toggleWishlist, isWishlisted } = useWishlist();
+  const wishlisted = isWishlisted(library.id);
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -163,10 +166,12 @@ const LibraryCard = ({
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center shadow-lg"
-              onClick={(e) => e.preventDefault()}
+              className={`absolute top-4 right-4 w-9 h-9 rounded-full backdrop-blur-sm flex items-center justify-center shadow-lg ${
+                wishlisted ? "bg-destructive/90 text-white" : "bg-card/80"
+              }`}
+              onClick={(e) => toggleWishlist(library.id, e)}
             >
-              <Heart className="w-4 h-4 text-muted-foreground" />
+              <Heart className={`w-4 h-4 ${wishlisted ? "fill-current" : "text-muted-foreground"}`} />
             </motion.button>
 
             {/* Profile Image */}

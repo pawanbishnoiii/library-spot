@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      beds: {
+        Row: {
+          bed_number: number
+          bed_type: string | null
+          created_at: string
+          id: string
+          is_disabled: boolean | null
+          is_occupied: boolean | null
+          library_id: string
+          occupant_id: string | null
+          price_override: number | null
+          room_id: string
+        }
+        Insert: {
+          bed_number: number
+          bed_type?: string | null
+          created_at?: string
+          id?: string
+          is_disabled?: boolean | null
+          is_occupied?: boolean | null
+          library_id: string
+          occupant_id?: string | null
+          price_override?: number | null
+          room_id: string
+        }
+        Update: {
+          bed_number?: number
+          bed_type?: string | null
+          created_at?: string
+          id?: string
+          is_disabled?: boolean | null
+          is_occupied?: boolean | null
+          library_id?: string
+          occupant_id?: string | null
+          price_override?: number | null
+          room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beds_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beds_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       booking_seats: {
         Row: {
           booking_id: string
@@ -136,6 +190,7 @@ export type Database = {
           created_at: string
           description: string | null
           facilities: Json | null
+          gender_preference: string | null
           id: string
           is_featured: boolean | null
           map_lat: number | null
@@ -145,12 +200,15 @@ export type Database = {
           owner_id: string
           pincode: string
           profile_url: string | null
+          property_type: string | null
           seats_per_row: number | null
           slug: string
           state: string
           status: Database["public"]["Enums"]["library_status"] | null
           theme_id: string | null
+          total_beds: number | null
           total_reviews: number | null
+          total_rooms: number | null
           total_rows: number | null
           total_seats: number | null
           updated_at: string
@@ -167,6 +225,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           facilities?: Json | null
+          gender_preference?: string | null
           id?: string
           is_featured?: boolean | null
           map_lat?: number | null
@@ -176,12 +235,15 @@ export type Database = {
           owner_id: string
           pincode: string
           profile_url?: string | null
+          property_type?: string | null
           seats_per_row?: number | null
           slug: string
           state: string
           status?: Database["public"]["Enums"]["library_status"] | null
           theme_id?: string | null
+          total_beds?: number | null
           total_reviews?: number | null
+          total_rooms?: number | null
           total_rows?: number | null
           total_seats?: number | null
           updated_at?: string
@@ -198,6 +260,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           facilities?: Json | null
+          gender_preference?: string | null
           id?: string
           is_featured?: boolean | null
           map_lat?: number | null
@@ -207,12 +270,15 @@ export type Database = {
           owner_id?: string
           pincode?: string
           profile_url?: string | null
+          property_type?: string | null
           seats_per_row?: number | null
           slug?: string
           state?: string
           status?: Database["public"]["Enums"]["library_status"] | null
           theme_id?: string | null
+          total_beds?: number | null
           total_reviews?: number | null
+          total_rooms?: number | null
           total_rows?: number | null
           total_seats?: number | null
           updated_at?: string
@@ -456,6 +522,92 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "reviews_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          created_at: string
+          current_occupancy: number
+          extra_requirements: string | null
+          floor_number: number | null
+          has_ac: boolean | null
+          has_attached_bath: boolean | null
+          has_balcony: boolean | null
+          has_study_table: boolean | null
+          has_wardrobe: boolean | null
+          has_wifi: boolean | null
+          id: string
+          images: Json | null
+          is_available: boolean | null
+          is_disabled: boolean | null
+          library_id: string
+          max_persons: number
+          monthly_price: number
+          name: string
+          permissions: string | null
+          policies: string | null
+          price_per_bed: number
+          room_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_occupancy?: number
+          extra_requirements?: string | null
+          floor_number?: number | null
+          has_ac?: boolean | null
+          has_attached_bath?: boolean | null
+          has_balcony?: boolean | null
+          has_study_table?: boolean | null
+          has_wardrobe?: boolean | null
+          has_wifi?: boolean | null
+          id?: string
+          images?: Json | null
+          is_available?: boolean | null
+          is_disabled?: boolean | null
+          library_id: string
+          max_persons?: number
+          monthly_price?: number
+          name: string
+          permissions?: string | null
+          policies?: string | null
+          price_per_bed?: number
+          room_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_occupancy?: number
+          extra_requirements?: string | null
+          floor_number?: number | null
+          has_ac?: boolean | null
+          has_attached_bath?: boolean | null
+          has_balcony?: boolean | null
+          has_study_table?: boolean | null
+          has_wardrobe?: boolean | null
+          has_wifi?: boolean | null
+          id?: string
+          images?: Json | null
+          is_available?: boolean | null
+          is_disabled?: boolean | null
+          library_id?: string
+          max_persons?: number
+          monthly_price?: number
+          name?: string
+          permissions?: string | null
+          policies?: string | null
+          price_per_bed?: number
+          room_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rooms_library_id_fkey"
             columns: ["library_id"]
             isOneToOne: false
             referencedRelation: "libraries"
@@ -727,6 +879,67 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      visitor_views: {
+        Row: {
+          id: string
+          ip_address: string | null
+          library_id: string
+          viewed_at: string
+          viewer_id: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address?: string | null
+          library_id: string
+          viewed_at?: string
+          viewer_id?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string | null
+          library_id?: string
+          viewed_at?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitor_views_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wishlists: {
+        Row: {
+          created_at: string
+          id: string
+          library_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          library_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          library_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlists_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -334,6 +334,16 @@
   }
 }
 
+/* Safe area for bottom nav */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Bottom nav spacing */
+.pb-bottom-nav {
+  padding-bottom: 4.5rem;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;

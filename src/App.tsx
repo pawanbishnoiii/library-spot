@@ -30,6 +30,9 @@ import OwnerNotifications from "./pages/owner/OwnerNotifications";
 import OwnerSettings from "./pages/owner/OwnerSettings";
 import OwnerDesigner from "./pages/owner/OwnerDesigner";
 import OwnerAccounts from "./pages/owner/OwnerAccounts";
+import OwnerRooms from "./pages/owner/OwnerRooms";
+import OwnerVisitors from "./pages/owner/OwnerVisitors";
+import SavedPage from "./pages/SavedPage";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -84,6 +87,7 @@ const AppRoutes = () => {
       <Route path="/library/:slug" element={<LibraryPage />} />
       <Route path="/auth/login" element={user ? <Navigate to={getDashboardPath()} replace /> : <AuthPage />} />
       <Route path="/auth/signup" element={user ? <Navigate to={getDashboardPath()} replace /> : <AuthPage />} />
+      <Route path="/saved" element={<SavedPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
       
       {/* User Routes */}
@@ -105,6 +109,8 @@ const AppRoutes = () => {
       <Route path="/owner/settings" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><OwnerSettings /></ProtectedRoute>} />
       <Route path="/owner/designer" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><OwnerDesigner /></ProtectedRoute>} />
       <Route path="/owner/accounts" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><OwnerAccounts /></ProtectedRoute>} />
+      <Route path="/owner/rooms" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><OwnerRooms /></ProtectedRoute>} />
+      <Route path="/owner/visitors" element={<ProtectedRoute allowedRoles={['owner', 'admin']}><OwnerVisitors /></ProtectedRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
