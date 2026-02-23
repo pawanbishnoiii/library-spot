@@ -68,7 +68,7 @@ const ForLibraryOwners = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 border border-secondary/20 mb-4"
           >
             <Building2 className="w-4 h-4 text-secondary" />
-            <span className="text-sm font-medium text-secondary">For Library Owners</span>
+            <span className="text-sm font-medium text-secondary">For Property Owners</span>
           </motion.span>
 
           <motion.h2
@@ -78,7 +78,7 @@ const ForLibraryOwners = () => {
             transition={{ delay: 0.1 }}
             className="font-heading text-3xl md:text-4xl font-bold mb-4"
           >
-            Grow Your Library Business
+            Grow Your Property Business
           </motion.h2>
 
           <motion.p
@@ -88,7 +88,7 @@ const ForLibraryOwners = () => {
             transition={{ delay: 0.2 }}
             className="text-muted-foreground text-lg"
           >
-            Join India's largest library booking platform and reach thousands of students
+            List your library, PG, hostel, or hotel and reach thousands of students
           </motion.p>
         </div>
 

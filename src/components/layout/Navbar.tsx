@@ -86,7 +86,7 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: "Find Libraries", href: "/search" },
+    { name: "Find Properties", href: "/search" },
     { name: "How It Works", href: "/#how-it-works" },
     { name: "For Owners", href: "/auth/signup?role=owner" },
     { name: "Contact", href: "/#contact" },
