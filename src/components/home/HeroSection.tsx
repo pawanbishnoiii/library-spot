@@ -10,8 +10,10 @@ import {
   Car,
   Building2,
   Clock,
-  IndianRupee,
-  X
+  X,
+  BookOpen,
+  Home,
+  BedDouble,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,27 +24,28 @@ interface Library {
   city: string;
   state: string;
   slug: string;
+  property_type: string | null;
 }
 
-interface Shift {
-  id: string;
-  name: string;
-  start_time: string;
-  end_time: string;
-  price_per_seat: number;
-  library_id: string;
-}
+const propertyTypes = [
+  { id: "all", label: "All", icon: Search },
+  { id: "library", label: "Library", icon: BookOpen },
+  { id: "pg", label: "PG / Hostel", icon: Home },
+  { id: "hotel", label: "Hotel / Room", icon: BedDouble },
+];
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 200]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
   const [selectedShift, setSelectedShift] = useState("");
+  const [selectedPropertyType, setSelectedPropertyType] = useState("all");
   
   const [libraries, setLibraries] = useState<Library[]>([]);
   const [cities, setCities] = useState<string[]>([]);
+  const [states, setStates] = useState<string[]>([]);
   const [shifts, setShifts] = useState<{ name: string; id: string }[]>([]);
   const [suggestions, setSuggestions] = useState<Library[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -67,23 +70,24 @@ const HeroSection = () => {
   const fetchLibraries = async () => {
     const { data } = await supabase
       .from("libraries")
-      .select("id, name, city, state, slug")
+      .select("id, name, city, state, slug, property_type")
       .eq("status", "approved");
     
     if (data) {
       setLibraries(data);
-      const uniqueCities = [...new Set(data.map(lib => lib.city))];
+      const uniqueCities = [...new Set(data.map(lib => lib.city))].sort();
+      const uniqueStates = [...new Set(data.map(lib => lib.state))].sort();
       setCities(uniqueCities);
+      setStates(uniqueStates);
     }
 
-    // Fetch unique shifts
     const { data: shiftData } = await supabase
       .from("shifts")
       .select("name")
       .eq("is_active", true);
     
     if (shiftData) {
-      const uniqueShifts = [...new Set(shiftData.map(s => s.name))].map((name, i) => ({
+      const uniqueShifts = [...new Set(shiftData.map(s => s.name))].map((name) => ({
         name,
         id: name.toLowerCase()
       }));
@@ -94,12 +98,14 @@ const HeroSection = () => {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     if (value.length > 0) {
-      const filtered = libraries.filter(lib =>
-        lib.name.toLowerCase().includes(value.toLowerCase()) ||
-        lib.city.toLowerCase().includes(value.toLowerCase()) ||
-        lib.state.toLowerCase().includes(value.toLowerCase())
-      );
-      setSuggestions(filtered.slice(0, 5));
+      const filtered = libraries.filter(lib => {
+        const matchesQuery = lib.name.toLowerCase().includes(value.toLowerCase()) ||
+          lib.city.toLowerCase().includes(value.toLowerCase()) ||
+          lib.state.toLowerCase().includes(value.toLowerCase());
+        const matchesType = selectedPropertyType === "all" || lib.property_type === selectedPropertyType;
+        return matchesQuery && matchesType;
+      });
+      setSuggestions(filtered.slice(0, 6));
       setShowSuggestions(true);
     } else {
       setSuggestions([]);
@@ -117,8 +123,9 @@ const HeroSection = () => {
     if (searchQuery) params.set("q", searchQuery);
     if (selectedCity) params.set("city", selectedCity);
     if (selectedFacilities.length > 0) params.set("facilities", selectedFacilities.join(","));
-    if (priceRange[0] > 0 || priceRange[1] < 200) params.set("price", `${priceRange[0]}-${priceRange[1]}`);
+    if (priceRange[0] > 0 || priceRange[1] < 10000) params.set("price", `${priceRange[0]}-${priceRange[1]}`);
     if (selectedShift) params.set("shift", selectedShift);
+    if (selectedPropertyType !== "all") params.set("type", selectedPropertyType);
     navigate(`/search?${params.toString()}`);
   };
 
@@ -134,8 +141,17 @@ const HeroSection = () => {
     { id: "parking", label: "Parking", icon: Car },
   ];
 
+  const getPropertyIcon = (type: string | null) => {
+    switch(type) {
+      case 'library': return <BookOpen className="w-4 h-4 text-primary" />;
+      case 'pg': return <Home className="w-4 h-4 text-success" />;
+      case 'hotel': return <BedDouble className="w-4 h-4 text-info" />;
+      default: return <Building2 className="w-4 h-4 text-primary" />;
+    }
+  };
+
   const stats = [
-    { value: "500+", label: "Libraries" },
+    { value: "500+", label: "Properties" },
     { value: "50K+", label: "Students" },
     { value: "100+", label: "Cities" },
     { value: "4.9", label: "Rating", icon: Star },
@@ -174,7 +190,7 @@ const HeroSection = () => {
           >
             <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
             <span className="text-sm font-medium text-primary">
-              1000+ Students studying right now
+              1000+ Students finding spaces right now
             </span>
           </motion.div>
 
@@ -187,7 +203,7 @@ const HeroSection = () => {
           >
             Find Your Perfect
             <br />
-            <span className="text-gradient">Study Space</span>
+            <span className="text-gradient">Study & Stay</span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -197,8 +213,8 @@ const HeroSection = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
           >
-            Discover and book seats at premium study libraries across India. 
-            AC rooms, high-speed WiFi, and peaceful environment guaranteed.
+            Discover libraries, PG accommodations, and hostels across India. 
+            Book seats, rooms, and beds with ease.
           </motion.p>
 
           {/* Search Box */}
@@ -208,6 +224,24 @@ const HeroSection = () => {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="bg-card rounded-2xl shadow-premium p-4 md:p-6 max-w-4xl mx-auto mb-8"
           >
+            {/* Property Type Tabs */}
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
+              {propertyTypes.map((type) => (
+                <button
+                  key={type.id}
+                  onClick={() => setSelectedPropertyType(type.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+                    selectedPropertyType === type.id
+                      ? "bg-primary text-primary-foreground shadow-glow"
+                      : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                  }`}
+                >
+                  <type.icon className="w-4 h-4" />
+                  {type.label}
+                </button>
+              ))}
+            </div>
+
             {/* Main Search Row */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 mb-4">
               {/* City Select */}
@@ -225,12 +259,12 @@ const HeroSection = () => {
                 </select>
               </div>
 
-              {/* Library Name Search with Autocomplete */}
+              {/* Search with Autocomplete */}
               <div className="md:col-span-5 relative" ref={searchRef}>
-                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
                 <input
                   type="text"
-                  placeholder="Search library name..."
+                  placeholder={selectedPropertyType === 'library' ? "Search libraries..." : selectedPropertyType === 'pg' ? "Search PG, hostels..." : "Search properties..."}
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onFocus={() => searchQuery && setShowSuggestions(true)}
@@ -252,10 +286,10 @@ const HeroSection = () => {
                           onClick={() => handleSuggestionClick(lib)}
                           className="w-full px-4 py-3 text-left hover:bg-muted transition-colors flex items-center gap-3"
                         >
-                          <Building2 className="w-4 h-4 text-primary" />
+                          {getPropertyIcon(lib.property_type)}
                           <div>
                             <p className="font-medium">{lib.name}</p>
-                            <p className="text-sm text-muted-foreground">{lib.city}, {lib.state}</p>
+                            <p className="text-sm text-muted-foreground">{lib.city}, {lib.state} · <span className="capitalize">{lib.property_type || 'Library'}</span></p>
                           </div>
                         </button>
                       ))}
@@ -272,7 +306,7 @@ const HeroSection = () => {
                   onChange={(e) => setSelectedShift(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 rounded-xl bg-muted/50 border border-transparent focus:border-primary focus:bg-background outline-none transition-all appearance-none cursor-pointer"
                 >
-                  <option value="">All Shifts</option>
+                  <option value="">Shifts</option>
                   {shifts.map(shift => (
                     <option key={shift.id} value={shift.name}>{shift.name}</option>
                   ))}
@@ -332,13 +366,14 @@ const HeroSection = () => {
                     {/* Price Range */}
                     <div>
                       <label className="text-sm font-medium mb-3 block">
-                        Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}/hr
+                        Price Range: ₹{priceRange[0]} - ₹{priceRange[1]}/mo
                       </label>
                       <div className="flex items-center gap-4">
                         <input
                           type="range"
                           min="0"
-                          max="200"
+                          max="10000"
+                          step="500"
                           value={priceRange[0]}
                           onChange={(e) => setPriceRange([parseInt(e.target.value), priceRange[1]])}
                           className="flex-1"
@@ -346,7 +381,8 @@ const HeroSection = () => {
                         <input
                           type="range"
                           min="0"
-                          max="200"
+                          max="10000"
+                          step="500"
                           value={priceRange[1]}
                           onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                           className="flex-1"
@@ -383,21 +419,34 @@ const HeroSection = () => {
             </AnimatePresence>
           </motion.div>
 
-          {/* Quick Features */}
+          {/* Quick Category Tags */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-wrap justify-center gap-4 mb-12"
+            className="flex flex-wrap justify-center gap-3 mb-12"
           >
-            {facilities.map((feature, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border"
+            {[
+              { label: "📚 Study Library", type: "library" },
+              { label: "🏠 PG & Hostel", type: "pg" },
+              { label: "🏨 Hotel & Rooms", type: "hotel" },
+              { label: "❄️ AC Rooms", facility: "ac" },
+              { label: "📶 WiFi", facility: "wifi" },
+            ].map((tag) => (
+              <button
+                key={tag.label}
+                onClick={() => {
+                  if (tag.type) {
+                    setSelectedPropertyType(tag.type);
+                    handleSearch();
+                  } else if (tag.facility) {
+                    toggleFacility(tag.facility);
+                  }
+                }}
+                className="px-4 py-2 rounded-full bg-card border border-border text-sm font-medium hover:border-primary hover:text-primary transition-all"
               >
-                <feature.icon className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">{feature.label}</span>
-              </div>
+                {tag.label}
+              </button>
             ))}
           </motion.div>
 
@@ -436,13 +485,9 @@ const HeroSection = () => {
           <motion.div
             animate={{ y: [0, 10, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-2"
+            className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center pt-2"
           >
-            <motion.div
-              animate={{ height: [8, 16, 8] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-1 bg-muted-foreground/50 rounded-full"
-            />
+            <div className="w-1.5 h-3 rounded-full bg-primary" />
           </motion.div>
         </motion.div>
       </div>

@@ -4,26 +4,26 @@ import { Search, Calendar, CreditCard, BookOpen, ArrowRight } from "lucide-react
 const steps = [
   {
     icon: Search,
-    title: "Search Libraries",
-    description: "Find study libraries near you by city, facilities, or price range. Filter by AC, WiFi, parking, and more.",
+    title: "Search Properties",
+    description: "Find libraries, PG, hostels, and rooms near you. Filter by city, facilities, price, and type.",
     color: "primary",
   },
   {
     icon: Calendar,
-    title: "Choose Your Slot",
-    description: "Select your preferred date, shift timing, and the number of seats you need.",
+    title: "Choose Your Plan",
+    description: "Select seats, rooms, or beds. Pick daily, monthly, or custom booking plans.",
     color: "secondary",
   },
   {
     icon: CreditCard,
     title: "Easy Payment",
-    description: "Pay securely via UPI. View transparent pricing with no hidden charges.",
+    description: "Pay securely via UPI. Transparent pricing with no hidden charges.",
     color: "success",
   },
   {
     icon: BookOpen,
-    title: "Start Studying",
-    description: "Get instant confirmation and start your focused study session at your booked seat.",
+    title: "Move In & Study",
+    description: "Get instant confirmation. Start studying or move into your accommodation.",
     color: "info",
   },
 ];
