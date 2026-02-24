@@ -2,6 +2,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import BottomNav from "@/components/layout/BottomNav";
 import HeroSection from "@/components/home/HeroSection";
+import PopularCities from "@/components/home/PopularCities";
 import FeaturedLibraries from "@/components/home/FeaturedLibraries";
 import HowItWorks from "@/components/home/HowItWorks";
 import WhyChooseUs from "@/components/home/WhyChooseUs";
@@ -15,6 +16,7 @@ const Index = () => {
       <Navbar />
       <main>
         <HeroSection />
+        <PopularCities />
         <FeaturedLibraries />
         <HowItWorks />
         <WhyChooseUs />

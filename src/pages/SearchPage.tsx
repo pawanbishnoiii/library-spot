@@ -73,8 +73,20 @@ const facilityOptions = [
   { id: "wifi", label: "WiFi", icon: Wifi },
   { id: "ac", label: "AC", icon: Snowflake },
   { id: "parking", label: "Parking", icon: Car },
+  { id: "food", label: "Food", icon: Users },
+  { id: "attached_bath", label: "Attached Bath", icon: Users },
+  { id: "gym", label: "Gym", icon: Users },
+  { id: "laundry", label: "Laundry", icon: Users },
   { id: "silent_zone", label: "Silent Zone", icon: Users },
   { id: "power_backup", label: "Power Backup", icon: Users },
+];
+
+const budgetRanges = [
+  { id: "0-5000", label: "Under 5K", min: 0, max: 5000 },
+  { id: "5000-8000", label: "5K-8K", min: 5000, max: 8000 },
+  { id: "8000-12000", label: "8K-12K", min: 8000, max: 12000 },
+  { id: "12000-18000", label: "12K-18K", min: 12000, max: 18000 },
+  { id: "18000-100000", label: "18K+", min: 18000, max: 100000 },
 ];
 
 const shiftOptions = [
@@ -629,20 +641,35 @@ const SearchPage = () => {
                       </div>
                     </div>
 
-                    {/* Price Range */}
+                    {/* Budget Range */}
                     <div className="p-4 rounded-xl bg-card border border-border">
-                      <h4 className="font-semibold mb-3 text-sm">Monthly Price</h4>
+                      <h4 className="font-semibold mb-3 text-sm">Budget Range</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {budgetRanges.map((range) => (
+                          <button
+                            key={range.id}
+                            onClick={() => setPriceRange([range.min, range.max])}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              priceRange[0] === range.min && priceRange[1] === range.max
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted hover:bg-muted/80"
+                            }`}
+                          >
+                            {range.label}
+                          </button>
+                        ))}
+                      </div>
                       <Slider
                         value={priceRange}
                         onValueChange={setPriceRange}
                         min={0}
-                        max={10000}
+                        max={25000}
                         step={500}
-                        className="mb-2"
+                        className="mt-3 mb-2"
                       />
                       <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>₹{priceRange[0]}</span>
-                        <span>₹{priceRange[1]}</span>
+                        <span>₹{priceRange[0].toLocaleString()}</span>
+                        <span>₹{priceRange[1].toLocaleString()}</span>
                       </div>
                     </div>
 
