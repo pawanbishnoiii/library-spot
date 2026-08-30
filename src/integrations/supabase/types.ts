@@ -812,6 +812,77 @@ export type Database = {
           },
         ]
       }
+      service_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      service_subcategories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shifts: {
         Row: {
           created_at: string
@@ -996,6 +1067,293 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vendor_orders: {
+        Row: {
+          address: string | null
+          amount: number
+          contact_phone: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          notes: string | null
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          quantity: number
+          scheduled_for: string | null
+          service_id: string | null
+          status: Database["public"]["Enums"]["booking_status"]
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          address?: string | null
+          amount?: number
+          contact_phone?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          notes?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          quantity?: number
+          scheduled_for?: string | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          address?: string | null
+          amount?: number
+          contact_phone?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          notes?: string | null
+          payment_status?: Database["public"]["Enums"]["payment_status"]
+          quantity?: number
+          scheduled_for?: string | null
+          service_id?: string | null
+          status?: Database["public"]["Enums"]["booking_status"]
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_orders_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_orders_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          images: Json
+          is_approved: boolean
+          order_id: string | null
+          rating: number
+          updated_at: string
+          user_id: string
+          vendor_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          images?: Json
+          is_approved?: boolean
+          order_id?: string | null
+          rating: number
+          updated_at?: string
+          user_id: string
+          vendor_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          images?: Json
+          is_approved?: boolean
+          order_id?: string | null
+          rating?: number
+          updated_at?: string
+          user_id?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "vendor_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_reviews_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendor_services: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_percent: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price: number
+          price_unit: string
+          subcategory_id: string | null
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_percent?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price?: number
+          price_unit?: string
+          subcategory_id?: string | null
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_percent?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number
+          price_unit?: string
+          subcategory_id?: string | null
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendor_services_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "service_subcategories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendor_services_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendors: {
+        Row: {
+          address: string | null
+          average_rating: number
+          banner_url: string | null
+          business_name: string
+          category_id: string | null
+          city: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          description: string | null
+          gallery: Json
+          id: string
+          is_featured: boolean
+          logo_url: string | null
+          map_lat: number | null
+          map_lng: number | null
+          opening_hours: Json
+          owner_id: string
+          pincode: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          state: string
+          status: Database["public"]["Enums"]["library_status"]
+          tagline: string | null
+          tags: string[]
+          total_reviews: number
+          updated_at: string
+          upi_id: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          average_rating?: number
+          banner_url?: string | null
+          business_name: string
+          category_id?: string | null
+          city?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          description?: string | null
+          gallery?: Json
+          id?: string
+          is_featured?: boolean
+          logo_url?: string | null
+          map_lat?: number | null
+          map_lng?: number | null
+          opening_hours?: Json
+          owner_id: string
+          pincode?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          state?: string
+          status?: Database["public"]["Enums"]["library_status"]
+          tagline?: string | null
+          tags?: string[]
+          total_reviews?: number
+          updated_at?: string
+          upi_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          average_rating?: number
+          banner_url?: string | null
+          business_name?: string
+          category_id?: string | null
+          city?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          description?: string | null
+          gallery?: Json
+          id?: string
+          is_featured?: boolean
+          logo_url?: string | null
+          map_lat?: number | null
+          map_lng?: number | null
+          opening_hours?: Json
+          owner_id?: string
+          pincode?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          state?: string
+          status?: Database["public"]["Enums"]["library_status"]
+          tagline?: string | null
+          tags?: string[]
+          total_reviews?: number
+          updated_at?: string
+          upi_id?: string | null
+          whatsapp_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendors_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       visitor_views: {
         Row: {
