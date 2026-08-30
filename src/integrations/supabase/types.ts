@@ -488,6 +488,123 @@ export type Database = {
         }
         Relationships: []
       }
+      push_campaigns: {
+        Row: {
+          action_url: string | null
+          audience: string
+          audience_city: string | null
+          audience_lat: number | null
+          audience_lng: number | null
+          banner_url: string | null
+          body: string
+          created_at: string
+          created_by: string | null
+          failed_count: number
+          icon_url: string | null
+          id: string
+          radius_km: number
+          sent_at: string | null
+          sent_count: number
+          source: string
+          status: string
+          tag: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_url?: string | null
+          audience?: string
+          audience_city?: string | null
+          audience_lat?: number | null
+          audience_lng?: number | null
+          banner_url?: string | null
+          body: string
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          icon_url?: string | null
+          id?: string
+          radius_km?: number
+          sent_at?: string | null
+          sent_count?: number
+          source?: string
+          status?: string
+          tag?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_url?: string | null
+          audience?: string
+          audience_city?: string | null
+          audience_lat?: number | null
+          audience_lng?: number | null
+          banner_url?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          icon_url?: string | null
+          id?: string
+          radius_km?: number
+          sent_at?: string | null
+          sent_count?: number
+          source?: string
+          status?: string
+          tag?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      push_devices: {
+        Row: {
+          city: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          last_seen_at: string
+          lat: number | null
+          lng: number | null
+          platform: string
+          token: string
+          topics: string[]
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          lat?: number | null
+          lng?: number | null
+          platform?: string
+          token: string
+          topics?: string[]
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_seen_at?: string
+          lat?: number | null
+          lng?: number | null
+          platform?: string
+          token?: string
+          topics?: string[]
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           comment: string | null
@@ -956,6 +1073,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      nearby_push_devices: {
+        Args: { _lat: number; _lng: number; _radius_km?: number }
+        Returns: {
+          distance_km: number
+          id: string
+          token: string
+          user_id: string
+        }[]
       }
     }
     Enums: {
