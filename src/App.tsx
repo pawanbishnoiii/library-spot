@@ -140,8 +140,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AppRoutes />
+          <PushSubscribeCard />
         </BrowserRouter>
       </TooltipProvider>
+
     </AuthProvider>
   </QueryClientProvider>
 );
