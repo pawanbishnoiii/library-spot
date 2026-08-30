@@ -129,3 +129,21 @@ export async function listenForegroundPush(cb: (payload: Record<string, string>)
     return null;
   }
 }
+
+/** True when Firebase web-push credentials are present in the environment. */
+export function isPushConfigured() {
+  return Boolean(
+    firebaseConfig.apiKey && firebaseConfig.projectId && appId && vapidKey && firebaseConfig.messagingSenderId
+  );
+}
+
+export function hasStoredToken() {
+  return Boolean(localStorage.getItem(PUSH_TOKEN_KEY));
+}
+
+/** Permission already granted but no token stored — register silently. */
+export async function registerExistingPermission(): Promise<PushResult> {
+  if (!isPushConfigured()) return { status: "not-configured" };
+  if (!isPushGranted()) return { status: "denied" };
+  return enablePush();
+}
