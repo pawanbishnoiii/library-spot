@@ -44,7 +44,10 @@ import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
-import PushSubscribeCard from "./components/push/PushSubscribeCard";
+import NotificationPrompt from "./components/push/NotificationPrompt";
+import { LocationProvider } from "@/contexts/LocationContext";
+import LocationSheet from "@/components/location/LocationSheet";
+
 
 const queryClient = new QueryClient();
 
