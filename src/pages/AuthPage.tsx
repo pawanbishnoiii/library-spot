@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { lovable } from "@/integrations/lovable/index";
+
 import { z } from "zod";
 
 type AuthMode = "login" | "signup" | "forgot" | "owner-signup";
