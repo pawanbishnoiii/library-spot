@@ -66,7 +66,21 @@ const AdminLibraries = () => {
       if (error) throw error;
 
       toast({ title: `Library ${status}` });
+
+      if (status === "approved") {
+        const { data, error: pushError } = await supabase.functions.invoke("notify-nearby-property", {
+          body: { library_id: libraryId, radius_km: 30 },
+        });
+        if (!pushError && data?.sent) {
+          toast({
+            title: "Nearby users notified",
+            description: `${data.sent} device(s) within 30 km got a push alert.`,
+          });
+        }
+      }
+
       fetchLibraries();
+
     } catch (error: any) {
       toast({
         title: "Error",
