@@ -43,8 +43,11 @@ import AdminMemberships from "./pages/admin/AdminMemberships";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
+import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
+import PushSubscribeCard from "./components/push/PushSubscribeCard";
 
 const queryClient = new QueryClient();
+
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
@@ -121,6 +124,8 @@ const AppRoutes = () => {
       <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AdminAnalytics /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><AdminSettings /></ProtectedRoute>} />
       <Route path="/admin/support" element={<ProtectedRoute allowedRoles={['admin']}><AdminSupport /></ProtectedRoute>} />
+      <Route path="/admin/push" element={<ProtectedRoute allowedRoles={['admin']}><AdminPushNotifications /></ProtectedRoute>} />
+
       
       <Route path="*" element={<NotFound />} />
     </Routes>
