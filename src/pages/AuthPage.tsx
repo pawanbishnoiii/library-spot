@@ -18,6 +18,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { lovable } from "@/integrations/lovable/index";
+
 import { z } from "zod";
 
 type AuthMode = "login" | "signup" | "forgot" | "owner-signup";
@@ -100,22 +102,29 @@ const AuthPage = () => {
 
   const handleGoogleSignIn = async () => {
     try {
-      const redirectUrl = `${window.location.origin}/onboarding`;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-        },
+      sessionStorage.setItem("post_login_redirect", "/onboarding");
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
-      if (error) throw error;
+      if (result.error) {
+        toast({
+          title: "Google sign-in failed",
+          description: result.error.message ?? "Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (result.redirected) return;
+      navigate("/onboarding");
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to sign in with Google",
+        description: error?.message || "Failed to sign in with Google",
         variant: "destructive",
       });
     }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
