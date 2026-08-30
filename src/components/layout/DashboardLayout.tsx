@@ -57,7 +57,9 @@ const adminMenuItems = [
   { icon: Users, label: "Users", path: "/admin/users" },
   { icon: Calendar, label: "Bookings", path: "/admin/bookings" },
   { icon: CreditCard, label: "Memberships", path: "/admin/memberships" },
+  { icon: Bell, label: "Push Notifications", path: "/admin/push" },
   { icon: BarChart3, label: "Analytics", path: "/admin/analytics" },
+
   { icon: MessageSquare, label: "Support", path: "/admin/support" },
   { icon: Settings, label: "Settings", path: "/admin/settings" },
 ];
