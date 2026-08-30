@@ -1,2 +1,0 @@
-REVOKE ALL ON FUNCTION public.nearby_push_devices(numeric, numeric, numeric) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.nearby_push_devices(numeric, numeric, numeric) TO service_role;
